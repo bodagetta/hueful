@@ -127,7 +127,7 @@ function getAuthStatus(){
 			$('.light_select').click(function(e){
 				getActiveLights();
 			});
-			chrome.browserAction.setIcon({path:"light-bulb.png"});
+			chrome.browserAction.setIcon({path:"img/light-bulb.png"});
 			addControlButtons();
 			addColorPicker();
 		}
