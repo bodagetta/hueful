@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+
+  "name": "Hueful",
+  "description": "This extension controls Philips Hue Lights.",
+  "version": "1.0.1",
+
+  "permissions": [
+    "*://*/"    
+  ],
+
+
+"content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["jquery.js"]
+    }
+  ],
+
+
+  "browser_action": {
+    "default_icon": "light-bulb-off.png",
+    "default_popup": "hueful.html"
+  }
+} 
