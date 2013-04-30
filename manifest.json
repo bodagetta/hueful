@@ -3,7 +3,7 @@
 
   "name": "Hueful",
   "description": "This extension controls Philips Hue Lights.",
-  "version": "1.0.2",
+  "version": "1.0.3",
 
   "permissions": [
     "*://*/"    
@@ -16,6 +16,8 @@
       "js": ["js/jquery.js"]
     }
   ],
+
+  "content_security_policy": "script-src 'self' https://ssl.google-analytics.com; object-src 'self'",
 
 
   "browser_action": {
