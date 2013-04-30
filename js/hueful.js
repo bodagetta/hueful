@@ -5,10 +5,12 @@ var username = "userHueful"
 var dataEval;
 var activeLights = [];
 var workingLights = [];
+var changeGroup = true;
 
 function findHue(){
 	$.getJSON('https://www.meethue.com/api/nupnp', function(data) {
-		$('#connectStatus').append("Looking for Bridge<br>");
+		$('#connectStatus').text("Looking for Bridge");
+		$('#connectStatus').append("<br>");
 		hueIP = data[0].internalipaddress;
 		if (hueIP != "0.0.0.0")
 		{
@@ -69,25 +71,100 @@ function changeColor(newColor){
 
 function changeColorSelected(newColor){
 
-	if (workingLights.length > 0)
+	if (!changeGroup){
+
+		if (workingLights.length > 0)
+		{
+			lightChange = workingLights.pop(1);
+			var URL = 'http://' + hueIP + '/api/' + username + '/lights/' + lightChange +  '/state';
+			myColor = Color(newColor);
+			var xyb = colorConverter.hexStringToXyBri(newColor.substring(1));
+			var setColor = colorConverter.xyBriForModel(xyb, 'LCT001');
+			console.log(xyb.x);
+			dataString = '{"on":true, "bri":' + Math.floor(setColor.bri * 255) + ', "xy":[' + [setColor.x, setColor.y] + ']}';
+			console.log(dataString);
+			$.ajax({
+				url: URL,
+				type: 'PUT',
+				data: dataString,
+				success: function(response) {
+				 console.log(response);
+				 if (workingLights.length > 0){
+				 	changeColorSelected(newColor);
+				 }
+				}
+			});
+		}
+	}
+	else
 	{
-		lightChange = workingLights.pop(1);
-		var URL = 'http://' + hueIP + '/api/' + username + '/lights/' + lightChange +  '/state';
+		var URL = 'http://' + hueIP + '/api/' + username + '/groups/0/action';
 		myColor = Color(newColor);
 		var xyb = colorConverter.hexStringToXyBri(newColor.substring(1));
 		var setColor = colorConverter.xyBriForModel(xyb, 'LCT001');
 		console.log(xyb.x);
 		dataString = '{"on":true, "bri":' + Math.floor(setColor.bri * 255) + ', "xy":[' + [setColor.x, setColor.y] + ']}';
-		console.log(dataString);
+
 		$.ajax({
 			url: URL,
 			type: 'PUT',
 			data: dataString,
 			success: function(response) {
 			 console.log(response);
-			 if (workingLights.length > 0){
-			 	changeColorSelected(newColor);
-			 }
+			}
+		});
+	}
+
+}
+
+function colorLoop(state){
+
+	if (!changeGroup){
+
+		if (workingLights.length > 0)
+		{
+			lightChange = workingLights.pop(1);
+			var URL = 'http://' + hueIP + '/api/' + username + '/lights/' + lightChange +  '/state';
+			if (state)
+			{
+				dataString = '{"on":true, "effect":"colorloop"}';
+			}
+			else
+			{
+				dataString = '{"on":true, "effect":"none"}';
+			}
+			console.log(dataString);
+			$.ajax({
+				url: URL,
+				type: 'PUT',
+				data: dataString,
+				success: function(response) {
+				 console.log(response);
+				 if (workingLights.length > 0){
+				 	colorLoop(state);
+				 }
+				}
+			});
+		}
+	}
+	else
+	{
+		var URL = 'http://' + hueIP + '/api/' + username + '/groups/0/action';
+		if (state)
+		{
+			dataString = '{"on":true, "effect":"colorloop"}';
+		}
+		else
+		{
+			dataString = '{"on":true, "effect":"none"}';
+		}
+
+		$.ajax({
+			url: URL,
+			type: 'PUT',
+			data: dataString,
+			success: function(response) {
+			 console.log(response);
 			}
 		});
 	}
@@ -152,7 +229,7 @@ function getActiveLights(){
 function addControlButtons(){
 
 	$('#connectStatus') 
-		.append('<input type="button" id="buttonAllOn" value="All On">') 
+		.append('<input type="button" id="buttonAllOn" value="All On">');
 	
 	$('#buttonAllOn').click(function(){ 
 		allOn();
@@ -160,11 +237,49 @@ function addControlButtons(){
 
 
 	$('#connectStatus') 
-		.append('<input type="button" id="buttonAllOff" value="All Off">') 
+		.append('<input type="button" id="buttonAllOff" value="All Off"><br>');
 		
 	$('#buttonAllOff').click(function(){ 
 		allOff();
 	}); 
+
+	$('#connectStatus') 
+		.append('<input type="button" id="buttonColorLoopOn" value="Color Loop On"><br>');
+
+	$('#buttonColorLoopOn').click(function(){ 
+		colorLoop(true);
+	}); 
+
+	$('#connectStatus') 
+		.append('<input type="button" id="buttonColorLoopOff" value="Color Loop Off"><br>');
+
+	$('#buttonColorLoopOff').click(function(){ 
+		colorLoop(false);
+	}); 
+	
+	$('#buttonAllOff').click(function(){ 
+		colorLoop();
+	}); 
+
+
+	$('#connectStatus')
+		.append('<input type="radio" name="group" value="yes" checked>All Lights');
+
+	$('#connectStatus')
+		.append('<input type="radio" name="group" value="no">Selected Lights');
+
+	$('input[name=group]').click(function(){
+		myRadio = $('input[name=group]');
+		checkedValue = myRadio.filter(':checked').val();
+		if (checkedValue == "yes")
+		{
+			changeGroup = true;
+		}
+		else if (checkedValue == "no")
+		{
+			changeGroup = false;
+		}
+	});
 
 	
 }
