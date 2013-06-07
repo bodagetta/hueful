@@ -6,6 +6,7 @@ var dataEval;
 var activeLights = [];
 var workingLights = [];
 var changeGroup = true;
+var groups = [];
 
 
 //Google Analytics
@@ -22,16 +23,18 @@ _gaq.push(['_trackPageview']);
 
 function findHue(){
 	$.getJSON('https://www.meethue.com/api/nupnp', function(data) {
-		$('#connectStatus').text("Looking for Bridge");
-		$('#connectStatus').append("<br>");
+		$('#bridge').text("Looking for Bridge");
+		$('#bridge').append("<br>");
 		hueIP = data[0].internalipaddress;
 		if (hueIP != "0.0.0.0")
 		{
-			$('#connectStatus').append("Found bridge at " + hueIP + "<br>");
+			$('#bridge').append("Found bridge at " + hueIP + "<br>");
+			$('#bridge').append("Bridge ID " + data[0].id + "<br>");
+			$('#bridge').append("Bridge MAC Address " + data[0].macaddress + "<br>");
 			getAuthStatus();
 		}
 		else{
-			$('#connectStatus').append("Bridge not found<br>");
+			$('#bridge').append("Bridge not found<br>");
 		}
   	});
 
@@ -39,17 +42,6 @@ function findHue(){
 };
 
 function addColorPicker() {
-	/*$('#colorPicker').colorpicker({
-		value: { red: 51, green: 102, blue: 153 },
-
-		change: function() {
-			if (window.console) console.log("value changed", $(this).colorpicker('value'));
-			workingLights = activeLights.slice(0);
-			changeColorSelected($(this).colorpicker('value'));
-		},
-
-		
-	});*/
 	$("#flat").spectrum({
 	    flat: true,
 	    showInput: true,
@@ -130,6 +122,27 @@ function changeColorSelected(newColor){
 
 }
 
+function populateGroups(group){
+	$.each(group, function(key, value){
+		console.log("key: " + key + "value: " + value);
+		$('#groups').append("<h4>Group " + (key+1) + "</h4>");
+		$('#groups').append('<input type="button" id="destroyGroup_' + key + '" value="X">'); 
+		$('#destroyGroup_' + key).click(function(){ 
+			removeGroup(0);
+		}); 
+		$.each(value, function(key2, value2){
+			$('#groups').append($('#' + value2).attr("value") + "<br>");
+		});
+
+	});
+}
+
+function removeGroup(group)
+{
+	console.log("removing" + group);
+}
+
+
 function colorLoop(state){
 
 	if (!changeGroup){
@@ -186,7 +199,7 @@ function colorLoop(state){
 
 function getAuthStatus(){
 	$.getJSON('http://' + hueIP + '/api/' + username, function(data) {
-		$('#connectStatus').append("Checking Authorization<br>");
+		$('#bridge').append("Checking Authorization<br>");
 		dataExt = data;
 		if ($.isArray(data))
 		{
@@ -199,20 +212,22 @@ function getAuthStatus(){
 		if (dataEval.hasOwnProperty('error'))
 		{
 			$('#connectStatus').append("Press the link button on the bridge, then click link below<br>");
-			$('#connectStatus') // Replace this selector with one suitable for you
-				.append('<input type="button" id="linkButton" value="Link">') // Create the element
+			$('#connectStatus') 
+				.append('<input type="button" id="linkButton" value="Link">') 
 				.click(function(){ 
 					addUser();
 			}); // Add a click handler
 		}
 		else if (dataEval.hasOwnProperty('lights'))
 		{
-			$('#connectStatus').append("Authorized<br>");
+			$('#bridge').append("Authorized<br>");
 			$.each(dataEval.lights, function(key, value){
 				$('#connectStatus') 
-					.append('<input class="light_select" type="checkbox" id=' + key + ' value="false">') 
+					.append('<input class="light_select" type="checkbox" id=' + key + ' value="' + value.name + '">') 
 				$('#connectStatus').append(key + ": " + value.name + "<br>");
 			});
+
+
 
 			$('.light_select').click(function(e){
 				getActiveLights();
@@ -220,6 +235,13 @@ function getAuthStatus(){
 			chrome.browserAction.setIcon({path:"img/light-bulb.png"});
 			addControlButtons();
 			addColorPicker();
+			$.each(activeLights, function(index, value){
+				//console.log(value);
+				selector = '#' + index;
+				console.log(index + ": " + selector);
+				$(selector).prop("checked", true);
+			});
+			populateGroups(groups);
 		}
   	});
 }
@@ -236,13 +258,14 @@ function getActiveLights(){
 		
 	});
 	console.log(activeLights);
+	localStorage["activeLights"] = JSON.stringify(activeLights);
 
 }
 
 function addControlButtons(){
 
 	$('#connectStatus') 
-		.append('<input type="button" id="buttonAllOn" value="All On">');
+		.append('<input class="btn btn-mini" type="button" id="buttonAllOn" value="All On">');
 	
 	$('#buttonAllOn').click(function(){ 
 		allOn();
@@ -250,36 +273,49 @@ function addControlButtons(){
 
 
 	$('#connectStatus') 
-		.append('<input type="button" id="buttonAllOff" value="All Off"><br>');
+		.append('<input class="btn btn-mini" type="button" id="buttonAllOff" value="All Off"><br>');
 		
 	$('#buttonAllOff').click(function(){ 
 		allOff();
 	}); 
 
 	$('#connectStatus') 
-		.append('<input type="button" id="buttonColorLoopOn" value="Color Loop On"><br>');
+		.append('<input class="btn btn-mini" type="button" id="buttonColorLoopOn" value="Color Loop On"><br>');
 
 	$('#buttonColorLoopOn').click(function(){ 
 		colorLoop(true);
 	}); 
 
 	$('#connectStatus') 
-		.append('<input type="button" id="buttonColorLoopOff" value="Color Loop Off"><br>');
+		.append('<input class="btn btn-mini" type="button" id="buttonColorLoopOff" value="Color Loop Off"><br>');
 
 	$('#buttonColorLoopOff').click(function(){ 
 		colorLoop(false);
 	}); 
-	
-	$('#buttonAllOff').click(function(){ 
-		colorLoop();
+	$('#connectStatus') 
+		.append('<input class="btn btn-mini" type="button" id="createGroup" value="Add Lights to New Group"><br>');
+
+	$('#createGroup').click(function(){ 
+		groups.push(activeLights);
+		localStorage["groups"] = JSON.stringify(groups);
 	}); 
 
 
 	$('#connectStatus')
-		.append('<input type="radio" name="group" value="yes" checked>All Lights');
+		.append('<input type="radio" name="group" value="yes" id="group_yes">All Lights');
 
 	$('#connectStatus')
-		.append('<input type="radio" name="group" value="no">Selected Lights');
+		.append('<input type="radio" name="group" value="no" id="group_no">Selected Lights');
+
+	if(changeGroup){
+		checked_id = '#group_yes';
+	}
+	else
+	{
+		checked_id = '#group_no';
+	}
+
+	$(checked_id).prop('checked', true);
 
 	$('input[name=group]').click(function(){
 		myRadio = $('input[name=group]');
@@ -287,15 +323,40 @@ function addControlButtons(){
 		if (checkedValue == "yes")
 		{
 			changeGroup = true;
+			localStorage["group"] = "true";
 		}
 		else if (checkedValue == "no")
 		{
 			changeGroup = false;
+			localStorage["group"] = "false";
 		}
 	});
+	$( "#slider" ).slider({ max: 255 });
+	$( "#slider" ).on( "slidechange", function( event, ui ) {
+		console.log(ui.value);
+		setBrightness(ui.value);
+	} );
 
 	
 }
+
+function setBrightness(brightness)
+{
+
+	var URL = 'http://' + hueIP + '/api/userHueful/groups/0/action';
+	dataString = '{"bri":' + brightness + '}';
+	console.log(dataString);
+	$.ajax({
+		url: URL,
+		type: 'PUT',
+		data: dataString,
+		success: function(response) {
+		 console.log(response);
+		}
+	});
+}
+
+
 
 function addUser(){
 	console.log("adding user");
@@ -347,32 +408,30 @@ function allOff(){
 	});
 }
 
-function getLights(){
-	var URL = 'http://' + hueIP + '/api/newdeveloper/lights';
-	var lights = [];
-	$.getJSON(URL, function(data) {
-		console.log(data);
-		$.each(data, function(key, value){
-			//console.log(key + ": " + value.name);
-			var URL2 = 'http://' + hueIP + '/api/newdeveloper/lights/' + key;
-			$.getJSON(URL2, function(data2){
-				console.log(data2);
-				console.log(URL2);
-				/*if (data[0].state.on == true){
-					status = "on";
+function getVariables(){
+	if(localStorage["group"] == "true")
+	{
+		changeGroup = true;
+	}
+	else if (localStorage["group"] == "false")
+	{
+		changeGroup = false;
+	}
+	else
+	{
+		localStorage["group"] = "true";
+		changeGroup = false;
+	}
+	activeLights = JSON.parse(localStorage["activeLights"]);
+	groups = JSON.parse(localStorage["groups"]);
+	console.log(activeLights);
 
-				}*/
-			});
-			lights.push(key);
-			
 
-		});
 	
-
-  	});
 
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  findHue();
+	getVariables();
+  	findHue();
 });

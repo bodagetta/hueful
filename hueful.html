@@ -8,20 +8,40 @@
 	      }
 	    </style>
 	    <link rel="stylesheet" media="screen" href="css/smoothness/jquery-ui-1.10.2.custom.min.css">
-
+		<link rel='stylesheet' href='css/bootstrap.min.css'>
 		<link rel='stylesheet' href='css/spectrum.css'>
 		<script src="js/jquery.js"></script>
 		<script src="js/color.min.js"></script>
 		<script src='js/spectrum.js'></script>
 		<script src="js/jquery-ui-1.10.2.custom.min.js"></script> 
+		<script src="js/bootstrap.min.js"></script> 
 		<script src="js/colorconverter.js"></script>
 		
 		<script src="js/hueful.js"></script> 
 	</head>
 	<body>
-		<h2>Hueful Light Controller</h2>
-		<div id="connectStatus">Not Connected<br></div>
-		<div id="colorPicker"></div>
-		<input type='text' id="flat">
+		<ul class="nav nav-tabs">
+		  <li><a href="#home" data-toggle="tab">Home</a></li>
+		  <li><a href="#groups" data-toggle="tab">Groups</a></li>
+		  <li><a href="#bridge" data-toggle="tab">Bridge</a></li>
+		</ul>
+
+		<div class="tab-content">
+		  <div class="tab-pane active" id="home">
+		  	<h3>Hueful Light Controller</h3>
+			<div id="connectStatus"></div>
+			<div id="colorPicker"></div>
+			<div id="slider"></div>
+			<input type='text' id="flat">
+		  </div>
+		  <div class="tab-pane" id="groups">
+		  	<h3>Hueful Light Controller</h3>
+		  </div>
+		  <div class="tab-pane" id="bridge">
+		  	<h3>BRIDGE Light Controller</h3>
+		  </div>
+		</div>
+ 
+		
 	</body>
 </html>
